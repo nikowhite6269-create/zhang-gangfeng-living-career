@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import ProgressCenter from "./ProgressCenter";
 import "./styles.css";
 
 const SAVE_KEY = "zgf-living-career-v1";
@@ -26,6 +27,8 @@ const initialState = () => ({
   attributes:{...ATTRS},
   badges:BADGES.map(([name,progress])=>({name,tier:"未解锁",progress})),
   growth:{},
+  trainingWeek:null,
+  directorSync:null,
   role:{team:"广东省青年精英选拔 · 蓝队",role:"第二持球点 / 侧翼强攻",minutes:28,usage:24,trust:42},
   archive:[],
   currentNode:"2008-09-selection",
@@ -148,7 +151,7 @@ function validateGame() {
 }
 
 const nav = [
-  ["hub","生涯大厅"],["player","球员中心"],["growth","成长池"],["badges","徽章"],
+  ["hub","生涯大厅"],["progress","生涯推进"],["player","球员中心"],["growth","成长池"],["badges","徽章"],
   ["role","角色 / 轮换"],["archive","生涯档案"],["calendar","日程"],["world","世界动态"],["match","比赛中心"]
 ];
 
@@ -185,7 +188,7 @@ function App() {
             id:"2008-09-selection",date:"2008年9月",title:"省青年精英选拔赛 · 蓝队 vs 白队",
             result:"蓝队 84–81 白队",line:"张刚峰 29 PTS · 5 REB · 9 AST · 2 STL",ovr:"67 → 68"
           }];
-          return {...s,player:{...s.player,ovr:68},archive,played:[...s.played,"2008-09-selection"],currentNode:"2008-10-camp",unlocked:[...new Set([...s.unlocked,"2008-10-camp"])]};
+          return {...s,player:{...s.player,ovr:68},archive,played:[...s.played,"2008-09-selection"],currentNode:"2008-10-camp",unlocked:[...new Set([...s.unlocked,"2008-10-camp"])],trainingWeek:s.trainingWeek||{id:"2008-10-w1",focus:null,label:null,completed:false},directorSync:null,world:[...s.world,{tag:"复训",text:"首轮选拔结束。教练组将张刚峰列入复训观察组，下一周重点验证外线稳定性、组织判断与对抗终结。"}]};
         });
         return;
       }
@@ -230,7 +233,7 @@ function App() {
     <main>
       <header className="topbar">
         <div>
-          <div className="eyebrow">SEPTEMBER 2008 · GUANGDONG</div>
+          <div className="eyebrow">{save.played.includes("2008-09-selection")?"OCTOBER 2008 · GUANGDONG":"SEPTEMBER 2008 · GUANGDONG"}</div>
           <h2>{save.player.name} <span>· 生涯模式</span></h2>
         </div>
         <div className="hudStats">
@@ -243,6 +246,7 @@ function App() {
 
       <section className="content">
         {screen==="hub" && <Hub save={save} setScreen={setScreen}/>}
+        {screen==="progress" && <ProgressCenter save={save} updateSave={updateSave} setScreen={setScreen}/>}
         {screen==="player" && <Player save={save}/>}
         {screen==="growth" && <Growth save={save} updateSave={updateSave}/>}
         {screen==="badges" && <Badges save={save}/>}
@@ -275,7 +279,7 @@ function Hub({save,setScreen}) {
     <Panel className="hero span8" title={played?"下一阶段已解锁":"当前关键节点"} sub={played?"首战档案已经写入，下一节点等待你进入。":"省青年精英选拔赛 · 首场正式高压样本"}>
       <div className="matchPoster">
         <div><Tag>BLUE TEAM</Tag><h4>{played?"复训周 · 体能与三分专项":"蓝队 vs 白队"}</h4><p>{played?"2008年10月 · 训练节点":"2008年9月 · 省青年精英选拔赛"}</p></div>
-        <button className="primary giant" onClick={()=>setScreen(played?"calendar":"match")}>{played?"查看下一节点":"TIP-OFF"}</button>
+        <button className="primary giant" onClick={()=>setScreen(played?"progress":"match")}>{played?"进入生涯推进":"TIP-OFF"}</button>
       </div>
     </Panel>
     <Panel className="span4" title="球员状态" sub="固定身体模板">
@@ -366,11 +370,11 @@ function Calendar({save,setScreen}) {
   const done=save.played.includes("2008-09-selection");
   const nodes=[
     ["2008年9月","省青年精英选拔赛 · 蓝队 vs 白队",done?"已完成":"当前","正式高压样本"],
-    ["2008年10月","选拔营复训周 · 体能与三分专项",done?"当前":"锁定","完成首战后解锁"],
+    ["2008年10月","选拔营复训周 · 第1周验证",done?"当前":"锁定","完成首战后解锁"],
     ["2008年11月","U18 省队集训邀请（待定）","锁定","由后续表现决定"]
   ];
   return <Panel title="日程" sub="关键节点需要确认，比赛不会自动开始">
-    <div className="timeline">{nodes.map((n,i)=><div className="node" key={i}><div className="dot"/><div><small>{n[0]}</small><h4>{n[1]}</h4><p>{n[3]}</p></div><Tag tone={n[2]==="当前"?"gold":n[2]==="已完成"?"green":"muted"}>{n[2]}</Tag>{i===0&&!done&&<button className="primary" onClick={()=>setScreen("match")}>前往比赛</button>}</div>)}</div>
+    <div className="timeline">{nodes.map((n,i)=><div className="node" key={i}><div className="dot"/><div><small>{n[0]}</small><h4>{n[1]}</h4><p>{n[3]}</p></div><Tag tone={n[2]==="当前"?"gold":n[2]==="已完成"?"green":"muted"}>{n[2]}</Tag>{i===0&&!done&&<button className="primary" onClick={()=>setScreen("match")}>前往比赛</button>}{i===1&&done&&<button className="primary" onClick={()=>setScreen("progress")}>进入复训周</button>}</div>)}</div>
   </Panel>
 }
 
