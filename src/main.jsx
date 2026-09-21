@@ -367,14 +367,42 @@ function Archive({save}) {
 }
 
 function Calendar({save,setScreen}) {
-  const done=save.played.includes("2008-09-selection");
+  const firstDone=save.played.includes("2008-09-selection");
+  const octDone=Boolean(save.octoberSettled);
+  const stage=save.careerStage || (octDone && save.u18Invite ? "october-complete" : "october");
+  const u18Started=stage==="u18";
+  const campReady=Boolean(save.u18CampReady);
+
   const nodes=[
-    ["2008年9月","省青年精英选拔赛 · 蓝队 vs 白队",done?"已完成":"当前","正式高压样本"],
-    ["2008年10月","选拔营复训周 · 第1周验证",done?"当前":"锁定","完成首战后解锁"],
-    ["2008年11月","U18 省队集训邀请（待定）","锁定","由后续表现决定"]
+    {
+      date:"2008年9月",title:"省青年精英选拔赛 · 蓝队 vs 白队",
+      status:firstDone?"已完成":"当前",desc:"正式高压样本",
+      action:!firstDone?{label:"前往比赛",screen:"match"}:null
+    },
+    {
+      date:"2008年10月",title:"选拔营复训月",
+      status:octDone?"已完成":firstDone?"当前":"锁定",desc:"4周复训与阶段评估",
+      action:firstDone&&!octDone?{label:"继续复训",screen:"progress"}:null
+    },
+    {
+      date:"2008年11月",title:save.u18Invite?"广东 U18 集训":"补录观察",
+      status:campReady?"已完成":(octDone?"当前":"锁定"),
+      desc:save.u18Invite?"进入更高年龄组训练与轮换竞争":"等待下一轮观察机会",
+      action:octDone&&!campReady?{label:u18Started?"继续 U18 集训":"进入 U18 集训",screen:"progress"}:null
+    },
+    {
+      date:"2008年11月",title:"广东 U18 · 内部对抗赛",
+      status:campReady?"当前":"锁定",desc:"完成 U18 前两周集训后解锁",
+      action:campReady?{label:"查看比赛节点",screen:"progress"}:null
+    }
   ];
-  return <Panel title="日程" sub="关键节点需要确认，比赛不会自动开始">
-    <div className="timeline">{nodes.map((n,i)=><div className="node" key={i}><div className="dot"/><div><small>{n[0]}</small><h4>{n[1]}</h4><p>{n[3]}</p></div><Tag tone={n[2]==="当前"?"gold":n[2]==="已完成"?"green":"muted"}>{n[2]}</Tag>{i===0&&!done&&<button className="primary" onClick={()=>setScreen("match")}>前往比赛</button>}{i===1&&done&&<button className="primary" onClick={()=>setScreen("progress")}>进入复训周</button>}</div>)}</div>
+
+  return <Panel title="日程" sub="当前节点始终提供可继续的入口，不再在日程与推进页之间死循环">
+    <div className="timeline">{nodes.map((n,i)=><div className="node" key={i}>
+      <div className="dot"/><div><small>{n.date}</small><h4>{n.title}</h4><p>{n.desc}</p></div>
+      <Tag tone={n.status==="当前"?"gold":n.status==="已完成"?"green":"muted"}>{n.status}</Tag>
+      {n.action&&<button className="primary" onClick={()=>setScreen(n.action.screen)}>{n.action.label}</button>}
+    </div>)}</div>
   </Panel>
 }
 
